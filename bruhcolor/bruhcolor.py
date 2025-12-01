@@ -1,26 +1,29 @@
 # Author: Ethan Christensen <github: https://github.com/ethanlchristensen>
 
-
-""" 
+"""
 256 Color formatting for bruhshell purposes
 Format and logic behind some of the code follows
 with that of termcolor, the ANSII Color formater
-that suported around 8 colors total             
+that suported around 8 colors total
 """
 
 import os
 from collections.abc import Sequence
 
+
+VERSION = (0, 0, 65)
+
 class bruhcolorwrapper(Sequence):
     """
-    This class serves as a mean to wrap over the 
-    color coded text. Wrapping it allows us to 
+    This class serves as a mean to wrap over the
+    color coded text. Wrapping it allows us to
     get the length of a color coded text ignoring
     the escape sequences. It also allows us to create
     out own format methods so we can properly us the
     f-string in python with a bruhcolored text
     """
-    def __init__(self, text, colored):
+
+    def __init__(self, text: str, colored: str):
         self.text = text
         self.colored = colored
         super().__init__()
@@ -31,31 +34,32 @@ class bruhcolorwrapper(Sequence):
     def __str__(self):
         return self.colored
 
-    def __format__(self, fmt):
-        if fmt != '':
-            if fmt[0] in ['<', '>', '^']:
+    def __format__(self, fmt: str):
+        if fmt != "":
+            if fmt[0] in ["<", ">", "^"]:
                 spacing = int(fmt[1:])
-                if fmt[0] == '<': # left aligned
+                if fmt[0] == "<":  # left aligned
                     word_size = len(self.text)
-                    return self.colored + (' ' * (spacing - word_size))
-                elif fmt[0] == '>': # right aligned
+                    return self.colored + (" " * (spacing - word_size))
+                elif fmt[0] == ">":  # right aligned
                     word_size = len(self.text)
-                    return  (' ' * (spacing - word_size)) + self.colored
-                elif fmt[0] == '^': # center aligned
+                    return (" " * (spacing - word_size)) + self.colored
+                elif fmt[0] == "^":  # center aligned
                     word_size = len(self.text)
                     left_size = (spacing - word_size) // 2
                     right_size = (spacing - word_size) // 2
-                    if (spacing - word_size) % 2 != 0: # If the spacing is odd, add the extra space to the right side
+                    # If the spacing is odd, add the extra space to the right side
+                    if (spacing - word_size) % 2 != 0:
                         right_size += 1
-                    return (' ' * left_size)  + self.colored + (' ' * right_size)
+                    return (" " * left_size) + self.colored + (" " * right_size)
                     pass
-            else: # default left aligned
+            else:  # default left aligned
                 spacing = int(fmt)
                 word_size = len(self.text)
-                return self.colored + (' ' * (spacing - word_size))
+                return self.colored + (" " * (spacing - word_size))
         return self.colored
-    
-    def __add__(self, addition):
+
+    def __add__(self, addition: any):
         if isinstance(addition, str):
             tmp = self.copy()
             tmp.text += str(addition)
@@ -67,19 +71,21 @@ class bruhcolorwrapper(Sequence):
             tmp.colored += addition.colored
             return tmp
         else:
-            print(f"ERROR: when trying to add, [{addition}] must be a string or bruhcolorwrapper")
-    
-    def __mul__(self, val):
+            print(
+                f"ERROR: when trying to add, [{addition}] must be a string or bruhcolorwrapper"
+            )
+
+    def __mul__(self, val: int):
         tmp = self.copy()
         tmp.text *= val
         tmp.colored *= val
         return tmp
-    
-    def __getitem__(self, i):
+
+    def __getitem__(self, i: int):
         return self.text[i]
 
-    def __contains__(self, value):
-        return value in self.text
+    def __contains__(self, value: any):
+        return str(value) in self.text
 
     def copy(self):
         text = self.text
@@ -87,17 +93,14 @@ class bruhcolorwrapper(Sequence):
         return bruhcolorwrapper(text=text, colored=colored)
 
 
-
-__AVAILABLE_COMMANDS__ = ['bruhcolored', 'colors', 'color_codes', 'valid_effects']
-
-VERSION = (0, 0, 63)
+__AVAILABLE_COMMANDS__ = ["bruhcolored", "colors", "color_codes", "valid_effects"]
 
 # GENERATE THE 256 COLORS -> [38;5;#m for color
 COLORS_256 = {}
 for i in range(16):
     for j in range(16):
         code = str(i * 16 + j)
-        COLORS_256[code] = u"\033[38;5;" + code + "m"
+        COLORS_256[code] = "\033[38;5;" + code + "m"
 
 # GENERATE THE 17 COLORS
 COLORS_8 = {
@@ -150,30 +153,35 @@ HIGHLIGHTS_256 = {}
 for i in range(16):
     for j in range(16):
         code = str(i * 16 + j)
-        HIGHLIGHTS_256[code] = u"\033[48;5;" + code + "m"
+        HIGHLIGHTS_256[code] = "\033[48;5;" + code + "m"
 
 # Possible attributes
 ATTRIBUTES = {
-    'bold': 1,
-    'dark': 2,
-    'italic': 3,
-    'underline': 4,
-    'blink': 5,
-    'reverse': 7,
-    'concealed': 8,
-    'crossed-out': 9,
+    "bold": 1,
+    "dark": 2,
+    "italic": 3,
+    "underline": 4,
+    "blink": 5,
+    "reverse": 7,
+    "concealed": 8,
+    "crossed-out": 9,
 }
 
 # Reset token to restore orginal formatting
-RESET_256 = u'\u001b[0m'
-RESET_8   = '\033[0m'
+RESET_256 = "\u001b[0m"
+RESET_8 = "\033[0m"
 
 
-def bruhcolored(text, color=None, on_color=None, attrs=None):
+def bruhcolored(
+    text: str,
+    color: int | str = None,
+    on_color: int | str = None,
+    attrs: list[str] = None,
+):
     """
-    desc:    Generates the properly escape sequenced string for the 
+    desc:    Generates the properly escape sequenced string for the
              user inputeed text
-    args: 
+    args:
              text     -> text to be escape sequenced
              color    -> the color code to color the text
              on_color -> the color to set the background
@@ -182,10 +190,10 @@ def bruhcolored(text, color=None, on_color=None, attrs=None):
     """
     if not color and not on_color and not attrs:
         return bruhcolorwrapper(text=text, colored=text)
-    
-    color         = str(color) if color else None
-    on_color      = str(on_color) if on_color else None
-    color_mode    = None
+
+    color = str(color) if color else None
+    on_color = str(on_color) if on_color else None
+    color_mode = None
     on_color_mode = None
 
     if color in COLORS_256:
@@ -200,19 +208,19 @@ def bruhcolored(text, color=None, on_color=None, attrs=None):
 
     text, orig_text = str(text), str(text)
 
-    if os.getenv('ANSI_COLORS_DISABLED') is None:
+    if os.getenv("ANSI_COLORS_DISABLED") is None:
         if color_mode == 256:
             if color is not None:
                 if str(color) in COLORS_256:
-                    text = (COLORS_256[str(color)] + text)
+                    text = COLORS_256[str(color)] + text
         else:
             if color is not None:
                 if str(color) in COLORS_8:
-                    text = (COLORS_8[str(color)] + text)
+                    text = COLORS_8[str(color)] + text
         if on_color_mode == 256:
             if on_color is not None:
                 if str(on_color) in HIGHLIGHTS_256:
-                    text = '\u001b[' + HIGHLIGHTS_256[str(on_color)] + text
+                    text = "\u001b[" + HIGHLIGHTS_256[str(on_color)] + text
         else:
             if on_color is not None:
                 if str(on_color) in HIGHLIGHTS_8:
@@ -221,17 +229,17 @@ def bruhcolored(text, color=None, on_color=None, attrs=None):
             if attrs is not None:
                 for attr in attrs:
                     if attr in ATTRIBUTES:
-                        text = '\u001b[' + str(ATTRIBUTES[attr]) + "m" + text
+                        text = "\u001b[" + str(ATTRIBUTES[attr]) + "m" + text
         else:
             if attrs is not None:
                 for attr in attrs:
                     if attr in ATTRIBUTES:
-                        text = '\033[' + str(ATTRIBUTES[attr]) + "m" + text
+                        text = "\033[" + str(ATTRIBUTES[attr]) + "m" + text
 
     return bruhcolorwrapper(orig_text, text + RESET_256)
 
 
-def colors(support="limited", on_color="black"):
+def colors(support: str = "limited", on_color: int | str = "black"):
     """
     desc:    prints out all of the colors supported
     args:    None
@@ -240,7 +248,9 @@ def colors(support="limited", on_color="black"):
     if support == "full":
         for i in range(0, len(COLORS_256), 16):
             for j in range(i, i + 16):
-                c = bruhcolored((' ' * (4 - len(str(j)))) + (str(j)), color=j, on_color=on_color)
+                c = bruhcolored(
+                    (" " * (4 - len(str(j)))) + (str(j)), color=j, on_color=on_color
+                )
                 print(f"{c}", end="")
             print()
     else:
@@ -248,13 +258,13 @@ def colors(support="limited", on_color="black"):
             c = bruhcolored(f"{color:^20s}", color=color, on_color=on_color)
             if i != 0 and i % 2 == 0:
                 print()
-                print(c,end="")
+                print(c, end="")
             else:
-                print(c,end="")
+                print(c, end="")
         print()
 
 
-def color_codes(support="limited"):
+def color_codes(support: str = "limited"):
     if support == "full":
         print(list(range(256)))
     else:

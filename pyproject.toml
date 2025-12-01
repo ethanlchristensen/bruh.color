@@ -1,0 +1,33 @@
+[build-system]
+requires = ["poetry-core>=2.2.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "bruhcolor"
+version = "0.0.65"
+description = "256-color terminal text formatter"
+authors = ["Ethan Christensen <ethanlchristensen@outlook.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/ethanlchristensen/bruhcolor"
+repository = "https://github.com/ethanlchristensen/bruhcolor"
+keywords = ["python", "terminal", "color", "text", "bruhcolor"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[poetry.group.dev.dependencies]
+pytest = "^8.0"
+black = "^24.3"
+isort = "^5.13"
+[dependency-groups]
+dev = [
+    "ruff (>=0.14.7,<0.15.0)"
+]

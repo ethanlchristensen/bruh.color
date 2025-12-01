@@ -180,3 +180,6 @@ Training
 Blog
 About
 termcolor/.gitignore at main · termcolor/termcolor
+api.txt
+publish.ps1
+push_version.py
