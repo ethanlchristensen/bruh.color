@@ -49,7 +49,7 @@ Build/test jobs have read-only permissions. Only the publish job gets id-token
 permission; it downloads verified artifacts and does not execute package code.
 The GitHub release job gets contents write permission. Third-party Actions use
 full commit SHAs aligned with bruhanimate's workflow pins. Refresh pins manually;
-routine Dependabot version-update PRs are paused.
+Dependabot version-update schedules are removed to prevent bot PRs and extra CI runs. Do not re-enable them without the maintainer's request. GitHub-generated Dependency Graph runs are controlled separately in repository settings.
 
 ## Recovery and verification
 
