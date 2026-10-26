@@ -1,80 +1,86 @@
 # bruhcolor
 
-[![Supported Python versions](https://img.shields.io/pypi/pyversions/termcolor.svg?logo=python&logoColor=FFE873)](https://pypi.org/project/bruhcolor/)
-[![Downloads](https://static.pepy.tech/badge/bruhcolor)](https://pepy.tech/project/bruhcolor)
-[![Downloads](https://static.pepy.tech/badge/bruhcolor/month)](https://pepy.tech/project/bruhcolor)
-[![Downloads](https://static.pepy.tech/badge/bruhcolor/week)](https://pepy.tech/project/bruhcolor)
-[![PyPI version](https://badge.fury.io/py/bruhcolor.svg)](https://badge.fury.io/py/bruhcolor)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+Named and 256-color terminal text formatting for Python. No runtime dependencies.
+The companion formatter used by [bruhanimate](https://github.com/ethanlchristensen/bruh.animate).
 
-bruhcolor is a Python package that allows you to color text in the terminal. It supports both 8-color and 256-color formatting, providing a wide range of colors to choose from. The package is available on PYPI and is licensed under the MIT license.
+Requires Python 3.10 or newer. Development uses Python 3.13 and uv 0.13.4.
 
-## Installation
-
-To install bruhcolor, you can use pip:
-
-```shell
-pip install bruhcolor
+```sh
+python -m pip install bruhcolor
 ```
-
-## Usage
-
-To use bruhcolor, simply import the `bruhcolored` function from the package:
 
 ```python
 from bruhcolor import bruhcolored
+
+message = bruhcolored("Hello world!", color="red", on_color=194, attrs=["bold"])
+print(message)
+print(message.colored)  # ANSI string
+print(message.text)     # original text
+assert len(message) == 12
 ```
 
-You can then use the `bruhcolored` function to color your text. Here's an example:
+Foreground/background accept named colors or integers/numeric strings from 0
+through 255, including zero (black). Named colors include black, red, green,
+yellow, blue, magenta, cyan, light_grey, dark_grey, light_red, light_green,
+light_yellow, light_blue, light_magenta, light_cyan and white; grey aliases black.
+Attributes: bold, dark, italic, underline, blink, reverse, concealed, crossed-out.
+Unknown colors/attributes are ignored for compatibility.
 
 ```python
-colored_text = bruhcolored("Hello world!", color="red", on_color=194, attrs=["bold", "blink"])
+from bruhcolor import bruhcolored, colors, color_codes, valid_effects
 
-print(colored_text)
-```
-
-This will output the text "Hello world!" in red color, with a background color of 194 and the attributes "bold" and "blink" applied.
-
-## Available Colors
-
-bruhcolor supports a wide range of colors. You can use either the 8-color or 256-color formatting. Here are some examples of available colors:
-
-- 8-color: black, grey, red, green, yellow, blue, magenta, cyan, light_grey, dark_grey, light_red, light_green, light_yellow, light_blue, light_magenta, light_cyan, white
-- 256-color: You can use any number between 0 and 255 to specify a color.
-
-To see a full list of available colors, you can use the `colors` function:
-
-```python
-from bruhcolor import colors
-
+label = bruhcolored("Ready", color=46)
+print(f"{label:>12}")
+assert label[:2] == "Re"
+assert (label + "!").text == "Ready!"
+assert (label * 2).text == "ReadyReady"
+color_codes()
+valid_effects()
 colors(support="full")
 ```
 
-This will print out all the available colors.
+Alignment supports a width and optional `<`, `>` or `^`; length/indexing count
+Python characters, not terminal display cells. Slices return plain strings.
+Set `ANSI_COLORS_DISABLED` (any value) to disable all generated escape sequences.
+Imports and formatting do not print or open a terminal; only discovery helpers print.
 
-## Available Attributes
+## Development
 
-bruhcolor also supports various attributes that you can apply to your text. Here are some examples of available attributes:
-
-- bold
-- dark
-- italic
-- underline
-- blink
-- reverse
-- concealed
-- crossed-out
-
-To see a full list of available attributes, you can use the `valid_effects` function:
-
-```python
-from bruhcolor import valid_effects
-
-valid_effects()
+```sh
+python -m pip install uv==0.13.4
+uv sync --locked --python 3.13
+uv run --locked ruff check .
+uv run --locked mypy
+uv run --locked pytest
+uv run --locked python scripts/check_examples.py
+uv run --locked python publish.py --check
 ```
 
-This will print out all the available attributes.
+`uv.lock` pins repository/CI environments. `poetry-core` is only the build backend;
+the Poetry CLI is not used. The former `poetry.lock` is superseded by `uv.lock`.
+The package keeps no runtime dependencies. CI covers Python 3.13 on Linux,
+Windows and macOS, plus the minimum Python 3.10 on Linux.
+
+## Releases
+
+Develop on a feature/dev branch, merge reviewed changes into main, then explicitly
+push a matching `vMAJOR.MINOR.PATCH` tag when ready to publish. Main pushes run
+checks; they do not publish. See [the release guide](docs/RELEASING.md).
+
+`publish.py` previews by default. `--check` validates the current version;
+`--write` bumps source versions and refreshes the lockfile. Git writes require
+additional explicit flags. The helper never creates a release tag or uploads.
+Legacy ignored `publish.ps1`/`push_version.py` are not part of this workflow.
+
+## Formatting corrections
+
+The current working version fixes integer zero being treated as an absent color,
+removes the duplicate escape prefix from indexed backgrounds, and emits no reset
+when colors are disabled. Unsupported wrapper addition raises TypeError instead
+of printing and returning None. Metadata now declares Python >=3.10, matching
+the union annotations already used by the package. These corrections are covered
+by regression tests; the existing version number has not been bumped or published.
 
 ## License
 
-bruhcolor is licensed under the MIT License. See [LICENSE](https://github.com/FNBBDevs/bruhcolor/blob/main/COPYING.txt) for more information.
+MIT. See [LICENSE](LICENSE) and retained upstream attribution in [COPYING.txt](COPYING.txt).

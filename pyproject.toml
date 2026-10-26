@@ -1,33 +1,59 @@
 [build-system]
-requires = ["poetry-core>=2.2.0"]
+requires = ["poetry-core>=2.2,<3"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry]
+[project]
 name = "bruhcolor"
 version = "0.0.65"
-description = "256-color terminal text formatter"
-authors = ["Ethan Christensen <ethanlchristensen@outlook.com>"]
+description = "Named and 256-color terminal text formatting for Python"
+authors = [{name = "Ethan Christensen", email = "ethanlchristensen@outlook.com"}]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/ethanlchristensen/bruhcolor"
-repository = "https://github.com/ethanlchristensen/bruhcolor"
+requires-python = ">=3.10,<4"
 keywords = ["python", "terminal", "color", "text", "bruhcolor"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Operating System :: OS Independent",
-    "License :: OSI Approved :: MIT License",
 ]
+dependencies = []
 
-[tool.poetry.dependencies]
-python = "^3.8"
+[project.urls]
+Homepage = "https://github.com/FNBBDevs/bruhcolor"
+Repository = "https://github.com/FNBBDevs/bruhcolor"
+"Bug Tracker" = "https://github.com/FNBBDevs/bruhcolor/issues"
 
-[poetry.group.dev.dependencies]
-pytest = "^8.0"
-black = "^24.3"
-isort = "^5.13"
 [dependency-groups]
 dev = [
-    "ruff (>=0.14.7,<0.15.0)"
+    "ruff>=0.14.7,<0.15",
+    "pytest>=8.3.4,<9",
+    "pytest-cov>=6,<7",
+    "mypy>=1.15,<2",
+    "twine>=6.2,<7",
+    "PyYAML>=6.0.3,<7",
+    "tomli>=2,<3; python_version < '3.11'",
 ]
+
+[tool.uv]
+required-version = "==0.13.4"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+exclude = ["build", "dist", "push_version.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501", "E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "--cov=bruhcolor --cov-report=term-missing"
+
+[tool.mypy]
+files = ["bruhcolor"]
+python_version = "3.10"
+strict = true
