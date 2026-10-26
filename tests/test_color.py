@@ -17,6 +17,7 @@ from bruhcolor import (
 @pytest.fixture(autouse=True)
 def color_environment(monkeypatch):
     monkeypatch.delenv("ANSI_COLORS_DISABLED", raising=False)
+    monkeypatch.delenv("NO_COLOR", raising=False)
 
 
 @pytest.mark.parametrize("index", range(256))
@@ -89,3 +90,74 @@ def test_discovery_and_import_are_resource_free(monkeypatch, capsys):
     importlib.reload(bruhcolor)
     assert VERSION == tuple(map(int, __version__.split(".")))
     assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize("color", ["#01aBff", (1, 171, 255)])
+def test_rgb_foreground_and_background(color):
+    assert (
+        str(bruhcolored("x", color, color))
+        == "\x1b[48;2;1;171;255m\x1b[38;2;1;171;255mx\x1b[0m"
+    )
+
+
+@pytest.mark.parametrize(
+    "value", ["#123", "#gggggg", (1, 2), (1, True, 3), (1, 2, 256)]
+)
+def test_explicit_rgb_errors(value):
+    with pytest.raises(ValueError):
+        bruhcolored("x", color=value)
+
+
+def test_no_color_and_explicit_policy(monkeypatch):
+    monkeypatch.setenv("NO_COLOR", "1")
+    assert str(bruhcolored("x", "red")) == "x"
+    assert "\x1b[31m" in str(bruhcolored("x", "red", enabled=True))
+    monkeypatch.setenv("ANSI_COLORS_DISABLED", "")
+    assert str(bruhcolored("x", "red")) == "x"
+    assert "\x1b[31m" in str(bruhcolored("x", "red", enabled=True))
+    assert str(bruhcolored("x", "red", enabled=False)) == "x"
+    with pytest.raises(TypeError):
+        bruhcolored("x", enabled=1)
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        "",
+        "s",
+        "8",
+        "<8",
+        ">8",
+        "^8",
+        "*^8s",
+        "0>8",
+        "08",
+        ".3",
+        "^9.3s",
+        ".0s",
+        ">2",
+        "0008",
+        "_<7.2",
+    ],
+)
+def test_string_formatting_preserves_plain_result_and_sgr_spans(spec):
+    import re
+
+    value = bruhcolored("hel", "red") + bruhcolored("lo", "blue")
+    rendered = format(value, spec)
+    assert re.sub(r"\x1b\[[0-9;]*m", "", rendered) == format("hello", spec)
+    if ".0" not in spec:
+        assert "\x1b[31m" in rendered
+    if ".3" in spec or ".2" in spec:
+        assert "\x1b[34m" not in rendered
+
+
+@pytest.mark.parametrize("spec", [".x", "+5", "=8", "4d"])
+def test_invalid_format_matches_python(spec):
+    with pytest.raises(ValueError):
+        format(bruhcolored("hello", "red"), spec)
+
+
+@pytest.mark.parametrize("spec", ["\n<8", "界^8"])
+def test_arbitrary_python_fill_character(spec):
+    assert format(bruhcolored("hello", enabled=False), spec) == format("hello", spec)

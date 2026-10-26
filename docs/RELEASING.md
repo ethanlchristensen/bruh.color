@@ -51,6 +51,10 @@ The GitHub release job gets contents write permission. Third-party Actions use
 full commit SHAs aligned with bruhanimate's workflow pins. Refresh pins manually;
 Dependabot version-update schedules are removed to prevent bot PRs and extra CI runs. Do not re-enable them without the maintainer's request. GitHub-generated Dependency Graph runs are controlled separately in repository settings.
 
+Documentation-only edits skip the full test/package jobs. Lint and executable
+README examples still run. Release refs force every gate; do not replace these
+job conditions with workflow path filters that leave required checks pending.
+
 ## Recovery and verification
 
 For an interrupted release, rerun the workflow for the same existing tag. PyPI

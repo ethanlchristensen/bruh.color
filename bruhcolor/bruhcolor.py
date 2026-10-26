@@ -10,6 +10,7 @@ that suported around 8 colors total
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Sequence
 from typing import overload
 
@@ -40,28 +41,31 @@ class bruhcolorwrapper(Sequence[str]):
         return self.colored
 
     def __format__(self, fmt: str) -> str:
-        if fmt != "":
-            if fmt[0] in ["<", ">", "^"]:
-                spacing = int(fmt[1:])
-                if fmt[0] == "<":  # left aligned
-                    word_size = len(self.text)
-                    return self.colored + (" " * (spacing - word_size))
-                elif fmt[0] == ">":  # right aligned
-                    word_size = len(self.text)
-                    return (" " * (spacing - word_size)) + self.colored
-                elif fmt[0] == "^":  # center aligned
-                    word_size = len(self.text)
-                    left_size = (spacing - word_size) // 2
-                    right_size = (spacing - word_size) // 2
-                    # If the spacing is odd, add the extra space to the right side
-                    if (spacing - word_size) % 2 != 0:
-                        right_size += 1
-                    return (" " * left_size) + self.colored + (" " * right_size)
-            else:  # default left aligned
-                spacing = int(fmt)
-                word_size = len(self.text)
-                return self.colored + (" " * (spacing - word_size))
-        return self.colored
+        """Python string alignment, fill, width, precision and optional s type.
+
+        Width/precision count Python characters, not terminal display cells.
+        Precision preserves SGR spans and resets styling before padding.
+        """
+        format(self.text, fmt)  # Let Python reject unsupported string formats.
+        match = re.fullmatch(
+            r"(?:(.)([<^>])|([<^>]))?(0?)([0-9]*)(?:\.([0-9]+))?s?", fmt, re.DOTALL
+        )
+        if match is None:
+            raise ValueError(f"Unsupported string format: {fmt!r}")
+        fill, explicit_align, align, zero, width, precision = match.groups()
+        fill = fill or ("0" if zero else " ")
+        align = explicit_align or align or "<"
+        count = (
+            min(len(self.text), int(precision))
+            if precision is not None
+            else len(self.text)
+        )
+        styled = (
+            _truncate(self.colored, count) if count < len(self.text) else self.colored
+        )
+        padding = max(0, int(width or 0) - count)
+        left = padding if align == ">" else padding // 2 if align == "^" else 0
+        return fill * left + styled + fill * (padding - left)
 
     def __add__(self, addition: str | bruhcolorwrapper) -> bruhcolorwrapper:
         if isinstance(addition, str):
@@ -179,31 +183,74 @@ RESET_256 = "\u001b[0m"
 RESET_8 = "\033[0m"
 
 
+_SGR = re.compile(r"\x1b\[[0-9;:]*m")
+Color = int | str | tuple[int, int, int]
+
+
+def _truncate(styled: str, count: int) -> str:
+    if count == 0:
+        return ""
+    position = visible = 0
+    while position < len(styled) and visible < count:
+        match = _SGR.match(styled, position)
+        if match:
+            position = match.end()
+        else:
+            position += 1
+            visible += 1
+    result = styled[:position]
+    return result + (RESET_256 if "\x1b[" in result else "")
+
+
+def _color_escape(value: Color, *, background: bool = False) -> str:
+    channel = 48 if background else 38
+    if isinstance(value, str) and value.startswith("#"):
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", value):
+            raise ValueError("Hex colors must be #RRGGBB")
+        value = (int(value[1:3], 16), int(value[3:5], 16), int(value[5:7], 16))
+    if isinstance(value, tuple):
+        if len(value) != 3 or any(
+            type(part) is not int or not 0 <= part <= 255 for part in value
+        ):
+            raise ValueError("RGB colors require three integer channels in 0..255")
+        return f"\x1b[{channel};2;{value[0]};{value[1]};{value[2]}m"
+    palette, names = (
+        (HIGHLIGHTS_256, HIGHLIGHTS_8) if background else (COLORS_256, COLORS_8)
+    )
+    return palette.get(str(value), names.get(str(value), ""))
+
+
 def bruhcolored(
     text: object,
-    color: int | str | None = None,
-    on_color: int | str | None = None,
+    color: Color | None = None,
+    on_color: Color | None = None,
     attrs: Sequence[str] | None = None,
+    *,
+    enabled: bool | None = None,
 ) -> bruhcolorwrapper:
-    """Format text with named or indexed ANSI colors and optional attributes.
+    """Format text with named/indexed, #RRGGBB or (r, g, b) colors.
 
     Index zero is black. Unknown colors/attributes are ignored for compatibility.
-    ANSI_COLORS_DISABLED (when present) returns entirely unstyled text. The
+    enabled overrides environment policy. Otherwise ANSI_COLORS_DISABLED (when
+    present) or nonempty NO_COLOR disables styling. No terminal probing occurs. The
     wrapper's length/indexing refer to plain Python characters, not display cells.
     This function does not inspect a terminal, print, or open external resources.
     """
     original = str(text)
-    if os.getenv("ANSI_COLORS_DISABLED") is not None:
+    if enabled is not None and type(enabled) is not bool:
+        raise TypeError("enabled must be bool or None")
+    if enabled is False or (
+        enabled is None
+        and ("ANSI_COLORS_DISABLED" in os.environ or bool(os.getenv("NO_COLOR")))
+    ):
         return bruhcolorwrapper(original, original)
     if color is None and on_color is None and not attrs:
         return bruhcolorwrapper(original, original)
     styled = original
     if color is not None:
-        key = str(color)
-        styled = COLORS_256.get(key, COLORS_8.get(key, "")) + styled
+        styled = _color_escape(color) + styled
     if on_color is not None:
-        key = str(on_color)
-        styled = HIGHLIGHTS_256.get(key, HIGHLIGHTS_8.get(key, "")) + styled
+        styled = _color_escape(on_color, background=True) + styled
     for attr in attrs or ():
         if attr in ATTRIBUTES:
             styled = f"\x1b[{ATTRIBUTES[attr]}m" + styled

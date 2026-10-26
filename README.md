@@ -84,3 +84,26 @@ by regression tests; the existing version number has not been bumped or publishe
 ## License
 
 MIT. See [LICENSE](LICENSE) and retained upstream attribution in [COPYING.txt](COPYING.txt).
+
+## RGB colors, color control, and formatting
+
+`bruhcolored` accepts palette indexes/names, `#RRGGBB`, and `(r, g, b)` tuples.
+RGB channels must be integers from 0 through 255. Invalid explicit hex/RGB values
+raise `ValueError`; unknown legacy color names retain their existing behavior.
+
+```python
+from bruhcolor import bruhcolored
+
+color = bruhcolored('hello', color='#66ccff', on_color=(12, 20, 30), enabled=True)
+assert '38;2;102;204;255' in str(color)
+assert format(bruhcolored('hello', enabled=False), '*^9.3s') == '***hel***'
+```
+
+Use `enabled=False` for plain output or `enabled=True` to explicitly enable color.
+With `enabled=None` (the default), a present `ANSI_COLORS_DISABLED` or nonempty
+`NO_COLOR` disables styling. There is no terminal probing or automatic RGB
+fallback. Formatting supports Python string fill/alignment, width, precision and
+optional `s`; precision preserves color spans and resets styling before padding.
+Widths and precision count Python characters, not terminal display cells. Wide
+and combining characters therefore need application-level display-width handling.
+These additions are available starting with bruhcolor 0.0.67.

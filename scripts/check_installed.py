@@ -15,8 +15,18 @@ def main():
     assert bruhcolor.VERSION == tuple(map(int, bruhcolor.__version__.split(".")))
     assert (installed.parent / "py.typed").is_file()
     assert all(hasattr(bruhcolor, name) for name in bruhcolor.__all__)
-    assert bruhcolor.bruhcolored("x", color=0).colored == "\x1b[38;5;0mx\x1b[0m"
-    assert bruhcolor.bruhcolored("x", on_color=194).colored == "\x1b[48;5;194mx\x1b[0m"
+    assert (
+        bruhcolor.bruhcolored("x", color=0, enabled=True).colored
+        == "\x1b[38;5;0mx\x1b[0m"
+    )
+    assert (
+        bruhcolor.bruhcolored("x", on_color=194, enabled=True).colored
+        == "\x1b[48;5;194mx\x1b[0m"
+    )
+    assert "38;2;1;2;3" in str(bruhcolor.bruhcolored("x", "#010203", enabled=True))
+    assert format(bruhcolor.bruhcolored("hello", enabled=False), "*^8.3s") == format(
+        "hello", "*^8.3s"
+    )
     assert len(bruhcolor.bruhcolored("hello", color="red")) == 5
     print(f"Verified installed bruhcolor {bruhcolor.__version__}")
 
