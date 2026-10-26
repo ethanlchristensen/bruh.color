@@ -1,6 +1,6 @@
 """Terminal formatting; importing opens no resources and writes no output."""
 
-__version__ = "0.0.65"
+__version__ = "0.0.66"
 
 from bruhcolor.bruhcolor import (
     ATTRIBUTES,
